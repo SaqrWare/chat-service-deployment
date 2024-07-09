@@ -1,0 +1,65 @@
+version: '3'
+services:
+  cassandra-seed:
+    image: cassandra:latest
+    volumes:
+      - ./cassandra/data-seed:/var/lib/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+    ports:
+      - "9042:9042" # Exposing Cassandra default CQL port
+
+  cassandra-node:
+    image: cassandra:latest
+    volumes:
+      - ./cassandra/data-node:/var/lib/cassandra
+    depends_on:
+      - cassandra-seed
+    environment:
+      - CASSANDRA_CLUSTER_NAME=TestCluster
+      - CASSANDRA_SEEDS=cassandra-seed
+    deploy:
+      replicas: 2
+
+  redis:
+    image: redis:latest
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379" # Exposing Redis default port
+
+  cassandra-ui:
+    image: ipushc/cassandra-web:latest
+    ports:
+      - "80:80"
+    environment:
+      - CASSANDRA_HOST=cassandra-seed
+      - CASSANDRA_PORT=9042
+
+  chat-service:
+    build: ./chat-service
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - CASSANDRA_HOST=cassandra-seed
+      - CASSANDRA_PORT=9042
+      - CASSANDRA_KEYSPACE=chat
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - REDIS_DB=0
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - chat-service
+
+
+volumes:
+  cassandra-data-seed:
+  cassandra-data-node:
+  redis-data:

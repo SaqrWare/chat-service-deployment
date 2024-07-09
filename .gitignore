@@ -1,0 +1,24 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.bak
+*.cache
+*.log
+*.npm-debug.log
+
+# Data 
+./cassandra/data-node/
+./cassandra/data-seed/
+./Redis/
+./chat-service/
