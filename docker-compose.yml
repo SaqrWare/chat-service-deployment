@@ -28,35 +28,73 @@ services:
     ports:
       - "6379:6379" # Exposing Redis default port
 
-  cassandra-ui:
-    image: ipushc/cassandra-web:latest
-    ports:
-      - "80:80"
+  create-cassandra-keyspace:
+    image: python
+    depends_on:
+      - cassandra-seed
+      - cassandra-node
+    entrypoint: >
+      sh -c "sleep 10 ; pip install cassandra-driver; python /scripts/create_db.py "
+    volumes:
+      - ./scripts:/scripts
+
+
+  cassandra-web:
+    image: delermando/docker-cassandra-web:v0.4.0
+    container_name: cassandra-web
+    depends_on:
+      - cassandra-node
     environment:
-      - CASSANDRA_HOST=cassandra-seed
+      - CASSANDRA_HOSTS=cassandra-seed
       - CASSANDRA_PORT=9042
+      - CASSANDRA_USERNAME=user
+      - CASSANDRA_PASSOWRD=pass
+    ports:
+      - "3000:3000"
+    
 
   chat-service:
     build: ./chat-service
+    depends_on:
+      - cassandra-seed
+      - cassandra-node
+      - redis
     ports:
       - "8080:8080"
     environment:
       - PORT=8080
-      - CASSANDRA_HOST=cassandra-seed
+      - CASSANDRA_HOSTS=cassandra-seed
       - CASSANDRA_PORT=9042
       - CASSANDRA_KEYSPACE=chat
       - REDIS_ADDR=redis:6379
       - REDIS_PASSWORD=
       - REDIS_DB=0
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    
 
   nginx:
     image: nginx:latest
+    depends_on:
+      - chat-service
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
     ports:
       - "80:80"
-    depends_on:
-      - chat-service
+    restart: on-failure
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 
 
 volumes:

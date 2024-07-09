@@ -18,7 +18,7 @@ Thumbs.db
 *.npm-debug.log
 
 # Data 
-./cassandra/data-node/
-./cassandra/data-seed/
-./Redis/
-./chat-service/
+cassandra/data-node/
+cassandra/data-seed/
+Redis/
+chat-service/
