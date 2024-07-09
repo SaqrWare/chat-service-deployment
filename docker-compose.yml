@@ -55,6 +55,7 @@ services:
 
   chat-service:
     build: ./chat-service
+    hostname: chat-svc
     depends_on:
       - cassandra-seed
       - cassandra-node
@@ -80,7 +81,7 @@ services:
     
 
   nginx:
-    image: nginx:latest
+    image: nginx
     depends_on:
       - chat-service
     volumes:
